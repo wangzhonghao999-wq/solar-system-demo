@@ -121,14 +121,28 @@ const asteroidBeltData = {
   fact: '位于火星与木星之间，包含数百万颗小型天体，总质量约为月球质量的 4%。'
 };
 
+const kuiperBeltData = {
+  name: '柯伊伯带',
+  englishName: 'Kuiper Belt',
+  type: 'kuiperBelt',
+  innerDistance: 82,
+  outerDistance: 108,
+  count: 320,
+  fact: '位于海王星轨道之外的神秘冰冻小天体带，类似于小行星带但更大、更遥远，是短周期彗星的发源地之一。'
+};
+
 const clickableObjects = [];
 const planetObjects = [];
 const labelObjects = [];
 let selectedPlanet = null;
 let asteroidBelt = null;
+let kuiperBelt = null;
 const sunMeshes = [];
 let timeScale = 0.5;
 let pointerDownPosition = null;
+let hoveredObject = null;
+let lastHoveredObject = null;
+
 const cameraTransition = {
   active: false,
   startedAt: 0,
@@ -138,6 +152,7 @@ const cameraTransition = {
   startTarget: new Vector3(),
   endTarget: new Vector3()
 };
+
 const reusableWorldPosition = new Vector3();
 const reusableFollowDelta = new Vector3();
 const reusableLabelPosition = new Vector3();
@@ -145,12 +160,66 @@ const cinematicTour = {
   active: false,
   shotIndex: 0,
   shotStartedAt: 0,
-  shotDuration: 5600,
+  shotDuration: 7200,
+  holdDuration: 2200,
+  captionFadeDuration: 500,
   shots: [
-    { name: '总览', type: 'overview', position: overviewCameraPosition, target: overviewTarget, note: '从黄道面上方扫过八大行星轨道。' },
-    { name: '地月', type: 'object', object: 'Earth', offset: new Vector3(9, 5.8, 11), note: '贴近地球与月球，观察地球大气边缘。' },
-    { name: '土星', type: 'object', object: 'Saturn', offset: new Vector3(15, 8, 19), note: '掠过土星环，突出冰质环系层次。' },
-    { name: '外太阳系', type: 'outer', offset: new Vector3(0, 32, 58), note: '拉远到天王星、海王星所在的外太阳系。' }
+    {
+      name: '总览',
+      type: 'overview',
+      position: overviewCameraPosition.clone(),
+      target: overviewTarget.clone(),
+      caption: '太阳系八大行星，从炙热的水星到寒冷的冰巨星'
+    },
+    {
+      name: '太阳',
+      type: 'object',
+      object: null,
+      isSun: true,
+      offset: new Vector3(10, 6, 12),
+      caption: '太阳 — 太阳系的中心，一颗黄矮星，表面温度约 5,500°C'
+    },
+    {
+      name: '水星与金星',
+      type: 'dual',
+      objects: ['Mercury', 'Venus'],
+      offset: new Vector3(8, 9, 20),
+      caption: '最靠近太阳的两颗类地行星：水星与金星'
+    },
+    {
+      name: '地球与月球',
+      type: 'object',
+      object: 'Earth',
+      offset: new Vector3(9, 5.8, 11),
+      caption: '我们的家园 — 地球，及其唯一的天然卫星月球'
+    },
+    {
+      name: '火星',
+      type: 'object',
+      object: 'Mars',
+      offset: new Vector3(8, 6, 13),
+      caption: '红色星球火星，拥有太阳系最高的奥林匹斯山火山'
+    },
+    {
+      name: '木星',
+      type: 'object',
+      object: 'Jupiter',
+      offset: new Vector3(16, 9, 22),
+      caption: '太阳系最大行星 — 木星，大红斑是一场持续数百年的巨型风暴'
+    },
+    {
+      name: '土星',
+      type: 'object',
+      object: 'Saturn',
+      offset: new Vector3(15, 8, 19),
+      caption: '壮丽的土星环 — 由冰粒和岩石碎片构成，绵延数十万公里'
+    },
+    {
+      name: '天王星与海王星',
+      type: 'outer',
+      offset: new Vector3(0, 35, 65),
+      caption: '冰冷的外太阳系：天王星与海王星，远距太阳数十亿公里'
+    }
   ]
 };
 
@@ -162,6 +231,12 @@ function easeInOutCubic(progress) {
   return progress < 0.5
     ? 4 * progress * progress * progress
     : 1 - ((-2 * progress + 2) ** 3) / 2;
+}
+
+function easeInOutQuart(progress) {
+  return progress < 0.5
+    ? 8 * progress * progress * progress * progress
+    : 1 - ((-2 * progress + 2) ** 4) / 2;
 }
 
 function roundRect(ctx, x, y, width, height, radius) {
@@ -226,7 +301,7 @@ function createLabel(mesh, text, radius = 1) {
   const material = new SpriteMaterial({
     map: texture,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0,
     depthTest: false,
     depthWrite: false
   });
@@ -248,9 +323,18 @@ function updateLabels() {
     sprite.position.y += verticalOffset;
 
     reusableLabelPosition.copy(sprite.position).project(camera);
-    const visible = reusableLabelPosition.z < 1 && reusableLabelPosition.z > -1 && distance < 185;
-    sprite.visible = visible;
-    if (!visible) return;
+    const inFrustum = reusableLabelPosition.z < 1 && reusableLabelPosition.z > -1;
+    const tooFar = distance >= 185;
+    const isHovered = (hoveredObject === mesh) || (selectedPlanet === mesh);
+    const visible = inFrustum && !tooFar && isHovered;
+
+    if (!visible) {
+      material.opacity = 0;
+      return;
+    }
+
+    // Fade in over 200ms when newly hovered
+    material.opacity = 0.92;
 
     const labelHeight = MathUtils.clamp(
       Math.tan(MathUtils.degToRad(camera.fov) / 2) * 0.025 * distance,
@@ -258,7 +342,6 @@ function updateLabels() {
       2.45
     );
     sprite.scale.set(labelHeight * aspect, labelHeight, 1);
-    material.opacity = MathUtils.clamp(1.18 - distance / 210, 0.45, 0.96);
   });
 }
 
@@ -276,7 +359,7 @@ function updateViewTransition(now) {
   if (!cameraTransition.active) return;
 
   const progress = Math.min((now - cameraTransition.startedAt) / cameraTransition.duration, 1);
-  const eased = easeInOutCubic(progress);
+  const eased = easeInOutQuart(progress);
   camera.position.lerpVectors(cameraTransition.startPosition, cameraTransition.endPosition, eased);
   controls.target.lerpVectors(cameraTransition.startTarget, cameraTransition.endTarget, eased);
 
@@ -317,39 +400,119 @@ function makeStarField() {
   });
 }
 
-function createAsteroidBelt() {
+function createBelt(data) {
   const geometry = new BufferGeometry();
-  const positions = new Float32Array(asteroidBeltData.count * 3);
-  for (let i = 0; i < asteroidBeltData.count; i += 1) {
+  const positions = new Float32Array(data.count * 3);
+  for (let i = 0; i < data.count; i += 1) {
     const angle = Math.random() * Math.PI * 2;
-    const radius = asteroidBeltData.innerDistance + Math.random() * (asteroidBeltData.outerDistance - asteroidBeltData.innerDistance);
-    const y = (Math.random() - 0.5) * 1.8;
+    const radius = data.innerDistance + Math.random() * (data.outerDistance - data.innerDistance);
+    const y = (Math.random() - 0.5) * (data.type === 'kuiperBelt' ? 4.5 : 1.8);
     positions[i * 3] = radius * Math.cos(angle);
     positions[i * 3 + 1] = y;
     positions[i * 3 + 2] = radius * Math.sin(angle);
   }
   geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  const isKuiper = data.type === 'kuiperBelt';
   const material = new PointsMaterial({
-    color: 0xc8b89a,
-    size: 0.35,
+    color: isKuiper ? 0x90d8f0 : 0xc8b89a,
+    size: isKuiper ? 0.48 : 0.35,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.72,
+    opacity: isKuiper ? 0.58 : 0.72,
     depthWrite: false,
     blending: AdditiveBlending
   });
   const belt = new Points(geometry, material);
-  belt.name = asteroidBeltData.name;
-  belt.userData = asteroidBeltData;
+  belt.name = data.name;
+  belt.userData = data;
   scene.add(belt);
   clickableObjects.push(belt);
   return belt;
 }
 
+function createAsteroidBelt() {
+  return createBelt(asteroidBeltData);
+}
+
+function createKuiperBelt() {
+  return createBelt(kuiperBeltData);
+}
+
+function createSunSurfaceTexture() {
+  const size = 512;
+  const textureCanvas = document.createElement('canvas');
+  textureCanvas.width = size;
+  textureCanvas.height = size;
+  const ctx = textureCanvas.getContext('2d');
+
+  // Base gradient — deep orange to bright yellow
+  const radialGrad = ctx.createRadialGradient(size * 0.5, size * 0.48, 0, size * 0.5, size * 0.5, size * 0.5);
+  radialGrad.addColorStop(0, '#fff9e6');
+  radialGrad.addColorStop(0.25, '#ffe566');
+  radialGrad.addColorStop(0.55, '#ffb020');
+  radialGrad.addColorStop(0.78, '#e87820');
+  radialGrad.addColorStop(1, '#b84010');
+  ctx.fillStyle = radialGrad;
+  ctx.fillRect(0, 0, size, size);
+
+  // Granulation cells — sun surface convection pattern
+  for (let i = 0; i < 280; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const r = 6 + Math.random() * 22;
+    const brightness = 0.55 + Math.random() * 0.45;
+    const isDark = Math.random() < 0.3;
+    const alpha = 0.08 + Math.random() * 0.14;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    if (isDark) {
+      ctx.fillStyle = `rgba(140, 50, 5, ${alpha})`;
+    } else {
+      ctx.fillStyle = `rgba(255, 255, 200, ${alpha * brightness})`;
+    }
+    ctx.fill();
+  }
+
+  // Bright plage / faculae regions
+  for (let i = 0; i < 18; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const r = 8 + Math.random() * 30;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    grad.addColorStop(0, 'rgba(255, 255, 200, 0.22)');
+    grad.addColorStop(0.5, 'rgba(255, 240, 120, 0.10)');
+    grad.addColorStop(1, 'rgba(255, 200, 50, 0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  // Subtle spicule-like dark lanes
+  for (let i = 0; i < 60; i++) {
+    const x1 = Math.random() * size;
+    const y1 = Math.random() * size;
+    const length = 10 + Math.random() * 40;
+    const angle = Math.random() * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 + Math.cos(angle) * length, y1 + Math.sin(angle) * length);
+    ctx.strokeStyle = `rgba(120, 40, 5, ${0.06 + Math.random() * 0.10})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.stroke();
+  }
+
+  const texture = new CanvasTexture(textureCanvas);
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
 function createSun() {
+  // Main sun body with procedural surface texture
+  const sunTexture = createSunSurfaceTexture();
   const sun = new Mesh(
     new SphereGeometry(5, 64, 64),
-    new MeshBasicMaterial({ color: 0xffd56b })
+    new MeshBasicMaterial({ map: sunTexture })
   );
   sun.name = '太阳';
   sun.userData = { type: 'sun', name: '太阳' };
@@ -357,10 +520,10 @@ function createSun() {
   clickableObjects.push(sun);
   sunMeshes.push(sun);
 
-  // Inner glow — warm orange corona
+  // Inner glow — warm orange corona (breathing pulse)
   const glow1 = new Mesh(
     new SphereGeometry(6.4, 48, 48),
-    new MeshBasicMaterial({ color: 0xff8020, transparent: true, opacity: 0.28, blending: AdditiveBlending, depthWrite: false })
+    new MeshBasicMaterial({ color: 0xff6820, transparent: true, opacity: 0.30, blending: AdditiveBlending, depthWrite: false })
   );
   scene.add(glow1);
   sunMeshes.push(glow1);
@@ -368,25 +531,76 @@ function createSun() {
   // Mid glow — golden halo
   const glow2 = new Mesh(
     new SphereGeometry(8.2, 48, 48),
-    new MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.16, blending: AdditiveBlending, depthWrite: false })
+    new MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.18, blending: AdditiveBlending, depthWrite: false })
   );
   scene.add(glow2);
   sunMeshes.push(glow2);
 
-  // Outer halo — soft diffuse corona
+  // Outer diffuse corona
   const glow3 = new Mesh(
     new SphereGeometry(11.5, 48, 48),
-    new MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.07, blending: AdditiveBlending, depthWrite: false })
+    new MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.08, blending: AdditiveBlending, depthWrite: false })
   );
   scene.add(glow3);
   sunMeshes.push(glow3);
 
+  // Wide soft halo
   const halo = new Mesh(
     new SphereGeometry(16, 48, 48),
-    new MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0.03, blending: AdditiveBlending, depthWrite: false })
+    new MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0.04, blending: AdditiveBlending, depthWrite: false })
   );
   scene.add(halo);
   sunMeshes.push(halo);
+
+  // Solar prominence / streamer spikes — 8 curved spike meshes
+  const spikeAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+  spikeAngles.forEach((deg) => {
+    const rad = (deg * Math.PI) / 180;
+    const spikeGeo = new SphereGeometry(1, 16, 16);
+    // Stretch into elongated shape
+    spikeGeo.scale(0.45, 1.6, 0.45);
+    const spike = new Mesh(
+      spikeGeo,
+      new MeshBasicMaterial({
+        color: 0xff9030,
+        transparent: true,
+        opacity: 0.22,
+        blending: AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    spike.position.set(
+      Math.cos(rad) * 7.8,
+      (Math.random() - 0.5) * 1.5,
+      Math.sin(rad) * 7.8
+    );
+    spike.lookAt(0, spike.position.y, 0);
+    scene.add(spike);
+    sunMeshes.push(spike);
+  });
+
+  // Solar corona rays — thin bright streaks at random angles
+  for (let i = 0; i < 14; i++) {
+    const rayGeo = new SphereGeometry(1, 8, 8);
+    rayGeo.scale(0.18, 2.8, 0.18);
+    const ray = new Mesh(
+      rayGeo,
+      new MeshBasicMaterial({
+        color: 0xffe080,
+        transparent: true,
+        opacity: 0.14,
+        blending: AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    const angle = Math.random() * Math.PI * 2;
+    const elevation = (Math.random() - 0.5) * 2.2;
+    ray.position.set(Math.cos(angle) * 9.2, elevation, Math.sin(angle) * 9.2);
+    ray.rotation.z = elevation * 0.15;
+    scene.add(ray);
+    sunMeshes.push(ray);
+  }
+
   return sun;
 }
 
@@ -453,6 +667,7 @@ function createPlanet(data) {
   planet.userData = data;
   orbitGroup.add(planet);
 
+  // Labels shown on hover only — no persistent labels
   createLabel(planet, data.name, data.radius);
 
   if (data.englishName === 'Earth') {
@@ -507,15 +722,44 @@ function setInfo(data) {
     infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>小行星数量</dt><dd>~${data.count} 颗（示意）</dd></div><div><dt>轨道范围</dt><dd>${data.innerDistance}–${data.outerDistance} AU</dd></div></dl><small>小行星带位于火星（28 AU）与木星（40 AU）之间，在本演示中经可视化夸张。</small>`;
     return;
   }
+  if (data.type === 'kuiperBelt') {
+    infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>冰冻天体数量</dt><dd>~${data.count} 颗（示意）</dd></div><div><dt>轨道范围</dt><dd>${data.innerDistance}–${data.outerDistance} AU</dd></div></dl><small>柯伊伯带位于海王星轨道之外，距离太阳约 30–50 天文单位，是太阳系最外层的冰冻小天体密集区。</small>`;
+    return;
+  }
   if (data.type === 'moon') {
     infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>绕行对象</dt><dd>地球</dd></div><div><dt>展示轨道半径</dt><dd>${data.distance.toFixed(1)} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div><div><dt>轨道周期</dt><dd>${data.orbitalPeriod} 天</dd></div><div><dt>自转周期</dt><dd>${data.rotationPeriod} 天</dd></div><div><dt>直径</dt><dd>${data.diameter}</dd></div></dl><small>*月球尺寸和轨道同样经过可视化夸张，方便交互拾取。</small>`;
+    return;
+  }
+  if (data.type === 'sun') {
+    infoCard.innerHTML = `<h2>${data.name} <small>太阳</small></h2><p>太阳是一颗黄矮星，表面温度约 5,500°C，核心温度高达 1,500 万°C。它占太阳系总质量的 99.86%，以强大的引力束缚着所有行星。</p><dl><div><dt>类型</dt><dd>黄矮星 (G2V)</dd></div><div><dt>直径</dt><dd>~1,392,700 km</dd></div><div><dt>表面温度</dt><dd>~5,500°C</dd></div><div><dt>核心温度</dt><dd>~15,000,000°C</dd></div></dl>`;
     return;
   }
   infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>展示距离</dt><dd>${data.distance} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div><div><dt>轨道周期</dt><dd>${data.orbitalPeriod} 地球年</dd></div><div><dt>自转周期</dt><dd>${data.rotationPeriod} 天</dd></div><div><dt>直径</dt><dd>${data.diameter}</dd></div></dl><small>*为便于观察，距离和半径不是严格真实比例。</small>`;
 }
 
+function setTourCaption(caption, isVisible) {
+  let captionEl = document.querySelector('.tour-caption');
+  if (!isVisible) {
+    if (captionEl) {
+      captionEl.style.opacity = '0';
+      setTimeout(() => captionEl?.remove(), 500);
+    }
+    return;
+  }
+  if (!captionEl) {
+    captionEl = document.createElement('div');
+    captionEl.className = 'tour-caption';
+    captionEl.setAttribute('aria-live', 'polite');
+    document.body.appendChild(captionEl);
+  }
+  captionEl.textContent = caption;
+  captionEl.style.opacity = '1';
+}
+
 function setTourInfo(shot) {
-  infoCard.innerHTML = `<h2>电影导览：${shot.name}</h2><p>${shot.note}</p><dl><div><dt>镜头</dt><dd>${cinematicTour.shotIndex + 1}/${cinematicTour.shots.length}</dd></div><div><dt>控制</dt><dd>点击按钮或拖拽画面退出</dd></div></dl><small>导览会自动切换总览、地月、土星与外太阳系预设镜头。</small>`;
+  const caption = shot.caption || '';
+  setTourCaption(caption, true);
+  infoCard.innerHTML = `<h2>电影导览：${shot.name}</h2><p>${shot.note || caption}</p><dl><div><dt>镜头</dt><dd>${cinematicTour.shotIndex + 1}/${cinematicTour.shots.length}</dd></div><div><dt>控制</dt><dd>点击按钮或拖拽画面退出</dd></div></dl><small>导览会依次经过太阳系各站，请欣赏。</small>`;
   tourStatus.textContent = `正在导览：${shot.name}`;
 }
 
@@ -536,13 +780,31 @@ function getTourFocus(shot) {
     return { target, position: target.clone().add(shot.offset) };
   }
 
+  if (shot.type === 'dual') {
+    const obj1 = clickableObjects.find((mesh) => mesh.userData.englishName === shot.objects[0]);
+    const obj2 = clickableObjects.find((mesh) => mesh.userData.englishName === shot.objects[1]);
+    const target = new Vector3();
+    if (obj1 && obj2) {
+      obj1.getWorldPosition(target);
+      obj2.getWorldPosition(reusableWorldPosition);
+      target.add(reusableWorldPosition).multiplyScalar(0.5);
+    } else if (obj1) {
+      obj1.getWorldPosition(target);
+    }
+    return { target, position: target.clone().add(shot.offset) };
+  }
+
+  if (shot.isSun) {
+    return { target: new Vector3(0, 0, 0), position: new Vector3(10, 6, 12) };
+  }
+
   const object = clickableObjects.find((mesh) => mesh.userData.englishName === shot.object);
   const target = new Vector3();
   if (object) object.getWorldPosition(target);
   return { target, position: target.clone().add(shot.offset) };
 }
 
-function startTourShot(index, duration = 1350) {
+function startTourShot(index, duration = 1600) {
   cinematicTour.shotIndex = index % cinematicTour.shots.length;
   cinematicTour.shotStartedAt = performance.now();
   const shot = cinematicTour.shots[cinematicTour.shotIndex];
@@ -558,7 +820,7 @@ function startTour() {
   controls.enabled = false;
   tourButton.textContent = '停止电影导览';
   tourButton.setAttribute('aria-pressed', 'true');
-  startTourShot(0, 1200);
+  startTourShot(0, 1800);
 }
 
 function stopTour(returnToOverview = false) {
@@ -568,18 +830,22 @@ function stopTour(returnToOverview = false) {
   tourButton.textContent = '开启电影导览';
   tourButton.setAttribute('aria-pressed', 'false');
   tourStatus.textContent = '自由探索模式';
+  setTourCaption('', false);
   if (returnToOverview) selectOverview();
 }
 
 function updateTour(now) {
   if (!cinematicTour.active) return;
+  const elapsed = now - cinematicTour.shotStartedAt;
   const shot = cinematicTour.shots[cinematicTour.shotIndex];
   const focus = getTourFocus(shot);
-  cameraTransition.endTarget.copy(focus.target);
-  cameraTransition.endPosition.copy(focus.position);
-  controls.target.lerp(focus.target, 0.035);
-  camera.position.lerp(focus.position, 0.018);
-  if (now - cinematicTour.shotStartedAt > cinematicTour.shotDuration) {
+
+  // Smooth camera tracking throughout the shot
+  controls.target.lerp(focus.target, 0.028);
+  camera.position.lerp(focus.position, 0.016);
+
+  // Transition to next shot after full duration + hold
+  if (elapsed > cinematicTour.shotDuration + cinematicTour.holdDuration) {
     startTourShot(cinematicTour.shotIndex + 1);
   }
 }
@@ -632,6 +898,23 @@ function selectPlanet(planet) {
 
 const raycaster = new Raycaster();
 const pointer = new Vector2();
+
+function updateHover() {
+  pointer.x = (pointer.x !== undefined ? pointer.x : 0);
+  pointer.y = (pointer.y !== undefined ? pointer.y : 0);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(clickableObjects, false);
+  lastHoveredObject = hoveredObject;
+  hoveredObject = hits.length > 0 ? hits[0].object : null;
+
+  // Update cursor style
+  if (hoveredObject) {
+    canvas.style.cursor = 'pointer';
+  } else {
+    canvas.style.cursor = 'grab';
+  }
+}
+
 function handlePointerDown(event) {
   if (cinematicTour.active) stopTour(false);
   pointerDownPosition = { x: event.clientX, y: event.clientY };
@@ -647,8 +930,50 @@ function handlePointerUp(event) {
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
   const hit = raycaster.intersectObjects(clickableObjects, false)[0];
-  if (!hit || hit.object.userData.type === 'sun') {
+  if (!hit) {
     selectOverview();
+    return;
+  }
+  if (hit.object.userData.type === 'sun') {
+    selectOverview();
+    setInfo({ type: 'sun', name: '太阳' });
+    return;
+  }
+  selectPlanet(hit.object);
+}
+
+function handlePointerMove(event) {
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  updateHover();
+}
+
+function handleTouchStart(event) {
+  if (cinematicTour.active) stopTour(false);
+  if (event.touches.length === 1) {
+    pointerDownPosition = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  }
+}
+
+function handleTouchEnd(event) {
+  if (!pointerDownPosition) return;
+  if (event.changedTouches.length < 1) return;
+  const touch = event.changedTouches[0];
+  const moved = Math.hypot(touch.clientX - pointerDownPosition.x, touch.clientY - pointerDownPosition.y);
+  pointerDownPosition = null;
+  if (moved > 8) return;
+
+  pointer.x = (touch.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObjects(clickableObjects, false)[0];
+  if (!hit) {
+    selectOverview();
+    return;
+  }
+  if (hit.object.userData.type === 'sun') {
+    selectOverview();
+    setInfo({ type: 'sun', name: '太阳' });
     return;
   }
   selectPlanet(hit.object);
@@ -681,26 +1006,29 @@ tourButton.addEventListener('click', () => {
 makeStarField();
 const sun = createSun();
 asteroidBelt = createAsteroidBelt();
+kuiperBelt = createKuiperBelt();
 planetData.forEach(createPlanet);
 renderLegend();
 setInfo(overviewInfo);
 
 renderer.domElement.addEventListener('pointerdown', handlePointerDown);
 renderer.domElement.addEventListener('pointerup', handlePointerUp);
+renderer.domElement.addEventListener('pointermove', handlePointerMove);
+renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+renderer.domElement.addEventListener('touchend', handleTouchEnd, { passive: true });
 controls.addEventListener('change', updateLabels);
 window.addEventListener('resize', handleResize);
 
+// Overview button (was preset-overview, inner/outer removed)
+document.querySelector('#preset-overview')?.addEventListener('click', () => {
+  stopTour(false);
+  selectOverview();
+});
+
 const clock = new Clock();
 
+// Preset views — overview only; inner/outer presets removed per feedback
 const presetViews = {
-  inner: {
-    position: new Vector3(0, 22, 58),
-    target: new Vector3(10, 0, 16)
-  },
-  outer: {
-    position: new Vector3(0, 32, 75),
-    target: new Vector3(58, 0, 58)
-  },
   overview: {
     position: overviewCameraPosition,
     target: overviewTarget
@@ -711,29 +1039,46 @@ function selectPreset(preset) {
   stopTour(false);
   selectedPlanet = null;
   const view = presetViews[preset];
+  if (!view) return;
   setInfo(overviewInfo);
   updateLegendSelection(null);
   startViewTransition(view.position, view.target, 1100);
 }
 
-document.querySelector('#preset-inner')?.addEventListener('click', () => selectPreset('inner'));
-document.querySelector('#preset-outer')?.addEventListener('click', () => selectPreset('outer'));
-document.querySelector('#preset-overview')?.addEventListener('click', () => selectPreset('overview'));
-
 function animate() {
   const delta = clock.getDelta();
   const now = performance.now();
   const frameScale = delta * 60 * timeScale;
+
+  // Sun animation — rotation + breathing corona pulse
+  const pulseFactor = Math.sin(now * 0.0007);
   sunMeshes.forEach((mesh, i) => {
-    const speed = i === 0 ? 0.12 : 0.06 - i * 0.015;
-    mesh.rotation.y += delta * speed * timeScale;
-    // Subtle scale pulse on inner glow
-    if (i === 1) {
-      mesh.scale.setScalar(1 + Math.sin(performance.now() * 0.0008) * 0.04);
+    if (i === 0) {
+      // Sun body slow rotation
+      mesh.rotation.y += delta * 0.06 * timeScale;
+    } else if (i === 1) {
+      // Inner glow breathing pulse
+      mesh.scale.setScalar(1 + pulseFactor * 0.045);
+      mesh.rotation.y += delta * 0.09 * timeScale;
+    } else if (i === 2) {
+      mesh.rotation.y -= delta * 0.04 * timeScale;
+    } else if (i === 3) {
+      mesh.scale.setScalar(1 + pulseFactor * 0.025);
+      mesh.rotation.y += delta * 0.025 * timeScale;
+    } else if (i === 4) {
+      mesh.scale.setScalar(1 + Math.sin(now * 0.0004) * 0.02);
+      mesh.rotation.y += delta * 0.015 * timeScale;
+    } else {
+      // Prominence spikes and corona rays — slow drift
+      mesh.rotation.y += delta * (0.02 + (i % 5) * 0.008) * timeScale;
     }
   });
+
   if (asteroidBelt) {
     asteroidBelt.rotation.y += delta * 0.018 * timeScale;
+  }
+  if (kuiperBelt) {
+    kuiperBelt.rotation.y += delta * 0.006 * timeScale;
   }
   planetObjects.forEach((object) => {
     object.orbitGroup.rotation.y += object.orbitSpeed * (object.isMoon ? 1 : 1.35) * frameScale;
@@ -742,6 +1087,7 @@ function animate() {
 
   updateViewTransition(now);
   updateTour(now);
+  updateHover();
 
   if (selectedPlanet && !cameraTransition.active) {
     selectedPlanet.getWorldPosition(reusableWorldPosition);
