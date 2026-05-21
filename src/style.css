@@ -205,6 +205,61 @@ small { color: #b8c7e2; }
   text-align: center;
 }
 
+.view-presets {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.preset-btn {
+  flex: 1;
+  min-width: 72px;
+  padding: 0.38rem 0.6rem;
+  border: 1px solid rgba(190, 211, 255, 0.32);
+  border-radius: 999px;
+  color: #ddeeff;
+  background: rgba(7, 12, 30, 0.68);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.preset-btn:hover {
+  border-color: rgba(255, 244, 180, 0.72);
+  background: rgba(35, 48, 82, 0.84);
+  transform: translateY(-1px);
+}
+
+.tour-caption {
+  position: fixed;
+  bottom: clamp(5rem, 12vh, 8rem);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.55rem 1.4rem;
+  border: 1px solid rgba(255, 244, 180, 0.45);
+  border-radius: 999px;
+  color: #f7fbff;
+  background: rgba(8, 13, 32, 0.82);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  font-size: clamp(0.8rem, 2vw, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  max-width: min(620px, calc(100vw - 2rem));
+  white-space: normal;
+  text-align: center;
+}
+
 .legend {
   position: fixed;
   right: clamp(0.75rem, 2vw, 1.5rem);
@@ -234,6 +289,11 @@ small { color: #b8c7e2; }
 
 .legend .overview-dot {
   background: radial-gradient(circle, #fff4b4 0 38%, #65a7ff 42% 100%);
+}
+
+.legend .sun-dot {
+  background: radial-gradient(circle at 35% 35%, #fffde0 0%, #ffe566 35%, #ff9900 70%, #ff4400 100%);
+  box-shadow: 0 0 10px #ffaa00, 0 0 20px #ff660066;
 }
 
 @media (max-width: 680px) {

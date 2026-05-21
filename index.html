@@ -20,6 +20,9 @@
         <div class="time-controls" aria-label="时间流速控制">
           <label for="time-scale">时间流速 <output id="time-scale-value" for="time-scale">0.50x</output></label>
           <input id="time-scale" class="time-slider" type="range" min="0" max="5" step="0.05" value="0.5" aria-label="时间流速，0 表示暂停" />
+          <div class="view-presets" aria-label="视角预设">
+            <button type="button" id="preset-overview" class="preset-btn" title="重置总览">重置总览</button>
+          </div>
           <button id="tour-toggle" class="tour-button" type="button" aria-pressed="false">开启电影导览</button>
           <small id="tour-status" class="tour-status">自由探索模式</small>
         </div>
