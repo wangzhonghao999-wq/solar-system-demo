@@ -552,6 +552,7 @@ function createSun() {
     })
   );
   coronaSprite.scale.set(52, 52, 1);
+  coronaSprite.userData = { isCorona: true };
   coronaSprite.renderOrder = -1;
   scene.add(coronaSprite);
   sunMeshes.push(coronaSprite);
@@ -1018,25 +1019,14 @@ function animate() {
 
   // Sun animation — rotation + breathing corona pulse
   const pulseFactor = Math.sin(now * 0.0007);
-  sunMeshes.forEach((mesh, i) => {
-    if (i === 0) {
+  sunMeshes.forEach((mesh) => {
+    if (mesh.userData.type === 'sun') {
       // Sun body slow rotation
       mesh.rotation.y += delta * 0.06 * timeScale;
-    } else if (i === 1) {
-      // Inner glow breathing pulse
-      mesh.scale.setScalar(1 + pulseFactor * 0.045);
-      mesh.rotation.y += delta * 0.09 * timeScale;
-    } else if (i === 2) {
-      mesh.rotation.y -= delta * 0.04 * timeScale;
-    } else if (i === 3) {
-      mesh.scale.setScalar(1 + pulseFactor * 0.025);
-      mesh.rotation.y += delta * 0.025 * timeScale;
-    } else if (i === 4) {
-      mesh.scale.setScalar(1 + Math.sin(now * 0.0004) * 0.02);
-      mesh.rotation.y += delta * 0.015 * timeScale;
-    } else {
-      // Corona sprite drift — slow rotation
-      mesh.rotation.z += delta * (0.015 + (i % 4) * 0.005) * timeScale;
+    } else if (mesh.userData.isCorona) {
+      // Corona sprite — pulse relative to its base scale (52), drift rotation
+      mesh.scale.setScalar(52 * (1 + pulseFactor * 0.045));
+      mesh.rotation.z += delta * 0.015 * timeScale;
     }
   });
 
