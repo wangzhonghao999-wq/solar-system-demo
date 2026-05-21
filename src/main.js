@@ -308,14 +308,15 @@ function createLabel(mesh, text, radius = 1) {
   const sprite = new Sprite(material);
   sprite.renderOrder = 20;
   scene.add(sprite);
-  labelObjects.push({ mesh, sprite, material, radius, aspect });
+  labelObjects.push({ mesh, sprite, material, radius, aspect, currentOpacity: 0, targetOpacity: 0 });
 }
 
 function updateLabels() {
   scene.updateMatrixWorld(true);
   camera.updateMatrixWorld();
 
-  labelObjects.forEach(({ mesh, sprite, material, radius, aspect }) => {
+  const FADE_K = 7; // higher = faster fade
+  labelObjects.forEach(({ mesh, sprite, material, radius, aspect, currentOpacity }, idx) => {
     mesh.getWorldPosition(reusableLabelPosition);
     const distance = camera.position.distanceTo(reusableLabelPosition);
     const verticalOffset = radius * 1.55 + MathUtils.clamp(distance * 0.018, 0.4, 2.2);
@@ -328,13 +329,12 @@ function updateLabels() {
     const isHovered = (hoveredObject === mesh) || (selectedPlanet === mesh);
     const visible = inFrustum && !tooFar && isHovered;
 
-    if (!visible) {
-      material.opacity = 0;
-      return;
-    }
+    const entry = labelObjects[idx];
+    entry.targetOpacity = visible ? 0.92 : 0;
 
-    // Fade in over 200ms when newly hovered
-    material.opacity = 0.92;
+    // Smooth lerp current toward target each frame
+    entry.currentOpacity = MathUtils.damp(entry.currentOpacity, entry.targetOpacity, FADE_K, 1 / 60);
+    material.opacity = entry.currentOpacity;
 
     const labelHeight = MathUtils.clamp(
       Math.tan(MathUtils.degToRad(camera.fov) / 2) * 0.025 * distance,
@@ -854,12 +854,21 @@ function renderLegend() {
   const overviewButton = '<button type="button" data-view="overview" class="selected" title="查看太阳系总览"><span class="overview-dot"></span>总览</button>';
   const planetButtons = planetData.map((planet) => `<button type="button" data-planet="${planet.englishName}" title="聚焦${planet.name}（${planet.englishName}）"><span style="background:#${new Color(planet.color).getHexString()}"></span>${planet.name}</button>`).join('');
   const moonButton = `<button type="button" data-planet="${moonData.englishName}" title="聚焦${moonData.name}（${moonData.englishName}）"><span style="background:#${new Color(moonData.color).getHexString()}"></span>${moonData.name}</button>`;
-  legend.innerHTML = overviewButton + planetButtons + moonButton;
+  const asteroidBeltButton = `<button type="button" data-belt="asteroidBelt" title="聚焦小行星带"><span style="background:#c8b89a"></span>小行星带</button>`;
+  const kuiperBeltButton = `<button type="button" data-belt="kuiperBelt" title="聚焦柯伊伯带"><span style="background:#90d8f0"></span>柯伊伯带</button>`;
+  legend.innerHTML = overviewButton + planetButtons + moonButton + asteroidBeltButton + kuiperBeltButton;
   legend.addEventListener('click', (event) => {
     const overview = event.target.closest('button[data-view="overview"]');
     if (overview) {
       stopTour(false);
       selectOverview();
+      return;
+    }
+    const beltButton = event.target.closest('button[data-belt]');
+    if (beltButton) {
+      stopTour(false);
+      const belt = beltButton.dataset.belt === 'asteroidBelt' ? asteroidBelt : kuiperBelt;
+      if (belt) selectBelt(belt);
       return;
     }
     const button = event.target.closest('button[data-planet]');
@@ -874,7 +883,8 @@ function updateLegendSelection(selectedName = null) {
   document.querySelectorAll('.legend button').forEach((button) => {
     const isOverview = button.dataset.view === 'overview' && selectedName === null;
     const isPlanet = button.dataset.planet === selectedName;
-    button.classList.toggle('selected', isOverview || isPlanet);
+    const isBelt = button.dataset.belt === selectedName;
+    button.classList.toggle('selected', isOverview || isPlanet || isBelt);
   });
 }
 
@@ -884,6 +894,17 @@ function selectOverview() {
   setInfo(overviewInfo);
   updateLegendSelection(null);
   startViewTransition(overviewCameraPosition, overviewTarget, 1100);
+}
+
+function selectBelt(belt) {
+  stopTour(false);
+  selectedPlanet = null;
+  setInfo(belt.userData);
+  const worldPosition = new Vector3();
+  belt.getWorldPosition(worldPosition);
+  const offset = new Vector3(0, 14, 38);
+  startViewTransition(worldPosition.clone().add(offset), worldPosition, 900);
+  updateLegendSelection(belt.userData.type);
 }
 
 function selectPlanet(planet) {
@@ -939,6 +960,10 @@ function handlePointerUp(event) {
     setInfo({ type: 'sun', name: '太阳' });
     return;
   }
+  if (hit.object.userData.type === 'asteroidBelt' || hit.object.userData.type === 'kuiperBelt') {
+    selectBelt(hit.object);
+    return;
+  }
   selectPlanet(hit.object);
 }
 
@@ -974,6 +999,10 @@ function handleTouchEnd(event) {
   if (hit.object.userData.type === 'sun') {
     selectOverview();
     setInfo({ type: 'sun', name: '太阳' });
+    return;
+  }
+  if (hit.object.userData.type === 'asteroidBelt' || hit.object.userData.type === 'kuiperBelt') {
+    selectBelt(hit.object);
     return;
   }
   selectPlanet(hit.object);
@@ -1026,24 +1055,6 @@ document.querySelector('#preset-overview')?.addEventListener('click', () => {
 });
 
 const clock = new Clock();
-
-// Preset views — overview only; inner/outer presets removed per feedback
-const presetViews = {
-  overview: {
-    position: overviewCameraPosition,
-    target: overviewTarget
-  }
-};
-
-function selectPreset(preset) {
-  stopTour(false);
-  selectedPlanet = null;
-  const view = presetViews[preset];
-  if (!view) return;
-  setInfo(overviewInfo);
-  updateLegendSelection(null);
-  startViewTransition(view.position, view.target, 1100);
-}
 
 function animate() {
   const delta = clock.getDelta();
