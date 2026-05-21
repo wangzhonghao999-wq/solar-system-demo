@@ -86,14 +86,14 @@ const overviewInfo = {
 };
 
 const planetData = [
-  { name: '水星', englishName: 'Mercury', radius: 0.9, distance: 10, color: 0xb9a58d, orbitSpeed: 0.020, spinSpeed: 0.018, tilt: 0.03, fact: '最靠近太阳、也是最小的行星；它的一天比一年还长。' },
-  { name: '金星', englishName: 'Venus', radius: 1.35, distance: 15, color: 0xe7c17b, orbitSpeed: 0.015, spinSpeed: -0.006, tilt: 3.1, fact: '被浓厚二氧化碳大气包裹，是太阳系中最炎热的行星。' },
-  { name: '地球', englishName: 'Earth', radius: 1.45, distance: 21, color: 0x3e8fd5, orbitSpeed: 0.012, spinSpeed: 0.030, tilt: 0.41, fact: '我们的家园，拥有液态水、活跃气候和一颗较大的月球。' },
-  { name: '火星', englishName: 'Mars', radius: 1.1, distance: 28, color: 0xc76542, orbitSpeed: 0.0095, spinSpeed: 0.028, tilt: 0.44, fact: '红色行星，拥有太阳系最高火山：奥林匹斯山。' },
-  { name: '木星', englishName: 'Jupiter', radius: 3.7, distance: 40, color: 0xd0ad83, orbitSpeed: 0.0052, spinSpeed: 0.055, tilt: 0.05, fact: '太阳系最大行星，著名的大红斑是一场持续很久的巨型风暴。' },
-  { name: '土星', englishName: 'Saturn', radius: 3.15, distance: 54, color: 0xe5cf94, orbitSpeed: 0.0038, spinSpeed: 0.050, tilt: 0.47, fact: '以明亮冰质行星环闻名，环系尺度巨大、层次丰富。' },
-  { name: '天王星', englishName: 'Uranus', radius: 2.25, distance: 67, color: 0x86d7df, orbitSpeed: 0.0026, spinSpeed: -0.035, tilt: 1.71, fact: '冰巨星，几乎是“躺着”自转，呈现独特的季节变化。' },
-  { name: '海王星', englishName: 'Neptune', radius: 2.2, distance: 79, color: 0x3867d6, orbitSpeed: 0.0021, spinSpeed: 0.032, tilt: 0.49, fact: '遥远的蓝色冰巨星，拥有强劲高速的大气风暴。' }
+  { name: '水星', englishName: 'Mercury', radius: 0.9, distance: 10, color: 0xb9a58d, orbitSpeed: 0.020, spinSpeed: 0.018, tilt: 0.03, fact: '最靠近太阳、也是最小的行星；它的一天比一年还长。', orbitalPeriod: 0.24, rotationPeriod: 58.6, diameter: '4,879 km' },
+  { name: '金星', englishName: 'Venus', radius: 1.35, distance: 15, color: 0xe7c17b, orbitSpeed: 0.015, spinSpeed: -0.006, tilt: 3.1, fact: '被浓厚二氧化碳大气包裹，是太阳系中最炎热的行星。', orbitalPeriod: 0.62, rotationPeriod: 243, diameter: '12,104 km' },
+  { name: '地球', englishName: 'Earth', radius: 1.45, distance: 21, color: 0x3e8fd5, orbitSpeed: 0.012, spinSpeed: 0.030, tilt: 0.41, fact: '我们的家园，拥有液态水、活跃气候和一颗较大的月球。', orbitalPeriod: 1.0, rotationPeriod: 1.0, diameter: '12,742 km' },
+  { name: '火星', englishName: 'Mars', radius: 1.1, distance: 28, color: 0xc76542, orbitSpeed: 0.0095, spinSpeed: 0.028, tilt: 0.44, fact: '红色行星，拥有太阳系最高火山：奥林匹斯山。', orbitalPeriod: 1.88, rotationPeriod: 1.03, diameter: '6,779 km' },
+  { name: '木星', englishName: 'Jupiter', radius: 3.7, distance: 40, color: 0xd0ad83, orbitSpeed: 0.0052, spinSpeed: 0.055, tilt: 0.05, fact: '太阳系最大行星，著名的大红斑是一场持续很久的巨型风暴。', orbitalPeriod: 11.86, rotationPeriod: 0.41, diameter: '139,820 km' },
+  { name: '土星', englishName: 'Saturn', radius: 3.15, distance: 54, color: 0xe5cf94, orbitSpeed: 0.0038, spinSpeed: 0.050, tilt: 0.47, fact: '以明亮冰质行星环闻名，环系尺度巨大、层次丰富。', orbitalPeriod: 29.46, rotationPeriod: 0.45, diameter: '116,460 km' },
+  { name: '天王星', englishName: 'Uranus', radius: 2.25, distance: 67, color: 0x86d7df, orbitSpeed: 0.0026, spinSpeed: -0.035, tilt: 1.71, fact: '冰巨星，几乎是"躺着"自转，呈现独特的季节变化。', orbitalPeriod: 84.01, rotationPeriod: 0.72, diameter: '50,724 km' },
+  { name: '海王星', englishName: 'Neptune', radius: 2.2, distance: 79, color: 0x3867d6, orbitSpeed: 0.0021, spinSpeed: 0.032, tilt: 0.49, fact: '遥远的蓝色冰巨星，拥有强劲高速的大气风暴。', orbitalPeriod: 164.8, rotationPeriod: 0.67, diameter: '49,244 km' }
 ];
 
 const moonData = {
@@ -105,13 +105,28 @@ const moonData = {
   orbitSpeed: 0.065,
   spinSpeed: 0.012,
   type: 'moon',
-  fact: '地球唯一的天然卫星，围绕地球运行；在本演示中放大显示，便于从地球视角和总览中辨识。'
+  fact: '地球唯一的天然卫星，围绕地球运行；在本演示中放大显示，便于从地球视角和总览中辨识。',
+  orbitalPeriod: 27.3,
+  rotationPeriod: 27.3,
+  diameter: '3,474 km'
+};
+
+const asteroidBeltData = {
+  name: '小行星带',
+  englishName: 'Asteroid Belt',
+  type: 'asteroidBelt',
+  innerDistance: 31,
+  outerDistance: 43,
+  count: 420,
+  fact: '位于火星与木星之间，包含数百万颗小型天体，总质量约为月球质量的 4%。'
 };
 
 const clickableObjects = [];
 const planetObjects = [];
 const labelObjects = [];
 let selectedPlanet = null;
+let asteroidBelt = null;
+const sunMeshes = [];
 let timeScale = 0.5;
 let pointerDownPosition = null;
 const cameraTransition = {
@@ -302,6 +317,35 @@ function makeStarField() {
   });
 }
 
+function createAsteroidBelt() {
+  const geometry = new BufferGeometry();
+  const positions = new Float32Array(asteroidBeltData.count * 3);
+  for (let i = 0; i < asteroidBeltData.count; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = asteroidBeltData.innerDistance + Math.random() * (asteroidBeltData.outerDistance - asteroidBeltData.innerDistance);
+    const y = (Math.random() - 0.5) * 1.8;
+    positions[i * 3] = radius * Math.cos(angle);
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = radius * Math.sin(angle);
+  }
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  const material = new PointsMaterial({
+    color: 0xc8b89a,
+    size: 0.35,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.72,
+    depthWrite: false,
+    blending: AdditiveBlending
+  });
+  const belt = new Points(geometry, material);
+  belt.name = asteroidBeltData.name;
+  belt.userData = asteroidBeltData;
+  scene.add(belt);
+  clickableObjects.push(belt);
+  return belt;
+}
+
 function createSun() {
   const sun = new Mesh(
     new SphereGeometry(5, 64, 64),
@@ -311,18 +355,38 @@ function createSun() {
   sun.userData = { type: 'sun', name: '太阳' };
   scene.add(sun);
   clickableObjects.push(sun);
+  sunMeshes.push(sun);
 
-  const glow = new Mesh(
-    new SphereGeometry(7.2, 48, 48),
-    new MeshBasicMaterial({ color: 0xffa43a, transparent: true, opacity: 0.24, blending: AdditiveBlending, depthWrite: false })
+  // Inner glow — warm orange corona
+  const glow1 = new Mesh(
+    new SphereGeometry(6.4, 48, 48),
+    new MeshBasicMaterial({ color: 0xff8020, transparent: true, opacity: 0.28, blending: AdditiveBlending, depthWrite: false })
   );
-  scene.add(glow);
+  scene.add(glow1);
+  sunMeshes.push(glow1);
+
+  // Mid glow — golden halo
+  const glow2 = new Mesh(
+    new SphereGeometry(8.2, 48, 48),
+    new MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.16, blending: AdditiveBlending, depthWrite: false })
+  );
+  scene.add(glow2);
+  sunMeshes.push(glow2);
+
+  // Outer halo — soft diffuse corona
+  const glow3 = new Mesh(
+    new SphereGeometry(11.5, 48, 48),
+    new MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.07, blending: AdditiveBlending, depthWrite: false })
+  );
+  scene.add(glow3);
+  sunMeshes.push(glow3);
 
   const halo = new Mesh(
-    new SphereGeometry(10.5, 48, 48),
-    new MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.1, blending: AdditiveBlending, depthWrite: false })
+    new SphereGeometry(16, 48, 48),
+    new MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0.03, blending: AdditiveBlending, depthWrite: false })
   );
   scene.add(halo);
+  sunMeshes.push(halo);
   return sun;
 }
 
@@ -439,11 +503,15 @@ function setInfo(data) {
     infoCard.innerHTML = `<h2>${data.name}</h2><p>${data.fact}</p><dl><div><dt>视角模式</dt><dd>自由总览</dd></div><div><dt>时间流速</dt><dd>${formatTimeScale(timeScale)}</dd></div></dl><small>比例经过夸张处理，便于同时看到主要轨道。</small>`;
     return;
   }
-  if (data.type === 'moon') {
-    infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>绕行对象</dt><dd>地球</dd></div><div><dt>展示轨道半径</dt><dd>${data.distance.toFixed(1)} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div></dl><small>*月球尺寸和轨道同样经过可视化夸张，方便交互拾取。</small>`;
+  if (data.type === 'asteroidBelt') {
+    infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>小行星数量</dt><dd>~${data.count} 颗（示意）</dd></div><div><dt>轨道范围</dt><dd>${data.innerDistance}–${data.outerDistance} AU</dd></div></dl><small>小行星带位于火星（28 AU）与木星（40 AU）之间，在本演示中经可视化夸张。</small>`;
     return;
   }
-  infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>展示距离</dt><dd>${data.distance} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div></dl><small>*为便于观察，距离和半径不是严格真实比例。</small>`;
+  if (data.type === 'moon') {
+    infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>绕行对象</dt><dd>地球</dd></div><div><dt>展示轨道半径</dt><dd>${data.distance.toFixed(1)} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div><div><dt>轨道周期</dt><dd>${data.orbitalPeriod} 天</dd></div><div><dt>自转周期</dt><dd>${data.rotationPeriod} 天</dd></div><div><dt>直径</dt><dd>${data.diameter}</dd></div></dl><small>*月球尺寸和轨道同样经过可视化夸张，方便交互拾取。</small>`;
+    return;
+  }
+  infoCard.innerHTML = `<h2>${data.name} <small>${data.englishName}</small></h2><p>${data.fact}</p><dl><div><dt>展示距离</dt><dd>${data.distance} AU*</dd></div><div><dt>相对半径</dt><dd>${data.radius.toFixed(2)}</dd></div><div><dt>轨道周期</dt><dd>${data.orbitalPeriod} 地球年</dd></div><div><dt>自转周期</dt><dd>${data.rotationPeriod} 天</dd></div><div><dt>直径</dt><dd>${data.diameter}</dd></div></dl><small>*为便于观察，距离和半径不是严格真实比例。</small>`;
 }
 
 function setTourInfo(shot) {
@@ -612,6 +680,7 @@ tourButton.addEventListener('click', () => {
 
 makeStarField();
 const sun = createSun();
+asteroidBelt = createAsteroidBelt();
 planetData.forEach(createPlanet);
 renderLegend();
 setInfo(overviewInfo);
@@ -622,11 +691,50 @@ controls.addEventListener('change', updateLabels);
 window.addEventListener('resize', handleResize);
 
 const clock = new Clock();
+
+const presetViews = {
+  inner: {
+    position: new Vector3(0, 22, 58),
+    target: new Vector3(10, 0, 16)
+  },
+  outer: {
+    position: new Vector3(0, 32, 75),
+    target: new Vector3(58, 0, 58)
+  },
+  overview: {
+    position: overviewCameraPosition,
+    target: overviewTarget
+  }
+};
+
+function selectPreset(preset) {
+  stopTour(false);
+  selectedPlanet = null;
+  const view = presetViews[preset];
+  setInfo(overviewInfo);
+  updateLegendSelection(null);
+  startViewTransition(view.position, view.target, 1100);
+}
+
+document.querySelector('#preset-inner')?.addEventListener('click', () => selectPreset('inner'));
+document.querySelector('#preset-outer')?.addEventListener('click', () => selectPreset('outer'));
+document.querySelector('#preset-overview')?.addEventListener('click', () => selectPreset('overview'));
+
 function animate() {
   const delta = clock.getDelta();
   const now = performance.now();
   const frameScale = delta * 60 * timeScale;
-  sun.rotation.y += delta * 0.15 * timeScale;
+  sunMeshes.forEach((mesh, i) => {
+    const speed = i === 0 ? 0.12 : 0.06 - i * 0.015;
+    mesh.rotation.y += delta * speed * timeScale;
+    // Subtle scale pulse on inner glow
+    if (i === 1) {
+      mesh.scale.setScalar(1 + Math.sin(performance.now() * 0.0008) * 0.04);
+    }
+  });
+  if (asteroidBelt) {
+    asteroidBelt.rotation.y += delta * 0.018 * timeScale;
+  }
   planetObjects.forEach((object) => {
     object.orbitGroup.rotation.y += object.orbitSpeed * (object.isMoon ? 1 : 1.35) * frameScale;
     object.mesh.rotation.y += object.spinSpeed * frameScale;

@@ -205,6 +205,35 @@ small { color: #b8c7e2; }
   text-align: center;
 }
 
+.view-presets {
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.preset-btn {
+  flex: 1;
+  min-width: 72px;
+  padding: 0.38rem 0.6rem;
+  border: 1px solid rgba(190, 211, 255, 0.32);
+  border-radius: 999px;
+  color: #ddeeff;
+  background: rgba(7, 12, 30, 0.68);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.preset-btn:hover {
+  border-color: rgba(255, 244, 180, 0.72);
+  background: rgba(35, 48, 82, 0.84);
+  transform: translateY(-1px);
+}
+
 .legend {
   position: fixed;
   right: clamp(0.75rem, 2vw, 1.5rem);
