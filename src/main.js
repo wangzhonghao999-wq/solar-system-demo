@@ -552,28 +552,38 @@ function createSun() {
   scene.add(halo);
   sunMeshes.push(halo);
 
-  // Solar corona rays — soft extended glow at 2 more distance bands
-  // (removed: SphereGeometry-based spike/ray meshes caused flat-ellipse and bar/streak
-  //  artifacts when scaled non-uniformly; replaced with pure radial glow spheres)
-  const coronaBands = [
-    { radius: 20, color: 0xfff0a0, opacity: 0.035 },
-    { radius: 26, color: 0xffd060, opacity: 0.022 },
-  ];
-  coronaBands.forEach(({ radius, color, opacity }) => {
-    const mesh = new Mesh(
-      new SphereGeometry(radius, 32, 32),
-      new MeshBasicMaterial({
-        color,
-        transparent: true,
-        opacity,
-        blending: AdditiveBlending,
-        depthWrite: false,
-        side: DoubleSide,
-      })
-    );
-    scene.add(mesh);
-    sunMeshes.push(mesh);
-  });
+  // Solar corona — screen-facing radial-gradient Sprite (no shell edges, no banding)
+  const coronaTextureCanvas = document.createElement('canvas');
+  coronaTextureCanvas.width = 512;
+  coronaTextureCanvas.height = 512;
+  const coronaCtx = coronaTextureCanvas.getContext('2d');
+  const cx = 256, cy = 256, maxR = 256;
+  const coronaGrad = coronaCtx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+  coronaGrad.addColorStop(0,    'rgba(255, 245, 160, 0.80)');
+  coronaGrad.addColorStop(0.15, 'rgba(255, 220,  80, 0.50)');
+  coronaGrad.addColorStop(0.40, 'rgba(255, 180,  40, 0.20)');
+  coronaGrad.addColorStop(0.70, 'rgba(255, 140,  20, 0.07)');
+  coronaGrad.addColorStop(1.0,  'rgba(255, 100,   0, 0.00)');
+  coronaCtx.beginPath();
+  coronaCtx.arc(cx, cy, maxR, 0, Math.PI * 2);
+  coronaCtx.fillStyle = coronaGrad;
+  coronaCtx.fill();
+
+  const coronaTexture = new CanvasTexture(coronaTextureCanvas);
+  coronaTexture.colorSpace = SRGBColorSpace;
+  const coronaSprite = new Sprite(
+    new SpriteMaterial({
+      map: coronaTexture,
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      depthTest: false,
+    })
+  );
+  coronaSprite.scale.set(52, 52, 1);
+  coronaSprite.renderOrder = -1;
+  scene.add(coronaSprite);
+  sunMeshes.push(coronaSprite);
 
   return sun;
 }
@@ -1054,8 +1064,8 @@ function animate() {
       mesh.scale.setScalar(1 + Math.sin(now * 0.0004) * 0.02);
       mesh.rotation.y += delta * 0.015 * timeScale;
     } else {
-      // Prominence spikes and corona rays — slow drift
-      mesh.rotation.y += delta * (0.02 + (i % 5) * 0.008) * timeScale;
+      // Corona sprite drift — slow rotation
+      mesh.rotation.z += delta * (0.015 + (i % 4) * 0.005) * timeScale;
     }
   });
 
