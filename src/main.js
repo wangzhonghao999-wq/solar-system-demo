@@ -520,39 +520,10 @@ function createSun() {
   clickableObjects.push(sun);
   sunMeshes.push(sun);
 
-  // Inner glow — warm orange corona (breathing pulse)
-  const glow1 = new Mesh(
-    new SphereGeometry(6.4, 48, 48),
-    new MeshBasicMaterial({ color: 0xff6820, transparent: true, opacity: 0.30, blending: AdditiveBlending, depthWrite: false })
-  );
-  scene.add(glow1);
-  sunMeshes.push(glow1);
-
-  // Mid glow — golden halo
-  const glow2 = new Mesh(
-    new SphereGeometry(8.2, 48, 48),
-    new MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0.18, blending: AdditiveBlending, depthWrite: false })
-  );
-  scene.add(glow2);
-  sunMeshes.push(glow2);
-
-  // Outer diffuse corona
-  const glow3 = new Mesh(
-    new SphereGeometry(11.5, 48, 48),
-    new MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.08, blending: AdditiveBlending, depthWrite: false })
-  );
-  scene.add(glow3);
-  sunMeshes.push(glow3);
-
-  // Wide soft halo
-  const halo = new Mesh(
-    new SphereGeometry(16, 48, 48),
-    new MeshBasicMaterial({ color: 0xfff0c0, transparent: true, opacity: 0.04, blending: AdditiveBlending, depthWrite: false })
-  );
-  scene.add(halo);
-  sunMeshes.push(halo);
-
-  // Solar corona — screen-facing radial-gradient Sprite (no shell edges, no banding)
+  // Solar corona — screen-facing radial-gradient Sprite (no sphere-shell edges, no perspective banding)
+  // Note: All SphereGeometry-based glow shells were removed; they created flattened elliptical
+  // bands when viewed from any angle other than head-on. The Sprite stays screen-facing at
+  // all times, producing a clean radial glow without perspective artifacts.
   const coronaTextureCanvas = document.createElement('canvas');
   coronaTextureCanvas.width = 512;
   coronaTextureCanvas.height = 512;
