@@ -810,9 +810,10 @@ function renderLegend() {
   const overviewButton = '<button type="button" data-view="overview" class="selected" title="查看太阳系总览"><span class="overview-dot"></span>总览</button>';
   const planetButtons = planetData.map((planet) => `<button type="button" data-planet="${planet.englishName}" title="聚焦${planet.name}（${planet.englishName}）"><span style="background:#${new Color(planet.color).getHexString()}"></span>${planet.name}</button>`).join('');
   const moonButton = `<button type="button" data-planet="${moonData.englishName}" title="聚焦${moonData.name}（${moonData.englishName}）"><span style="background:#${new Color(moonData.color).getHexString()}"></span>${moonData.name}</button>`;
+  const sunButton = `<button type="button" data-sun title="聚焦太阳（Sun）"><span class="sun-dot"></span>太阳</button>`;
   const asteroidBeltButton = `<button type="button" data-belt="asteroidBelt" title="聚焦小行星带"><span style="background:#c8b89a"></span>小行星带</button>`;
   const kuiperBeltButton = `<button type="button" data-belt="kuiperBelt" title="聚焦柯伊伯带"><span style="background:#90d8f0"></span>柯伊伯带</button>`;
-  legend.innerHTML = overviewButton + planetButtons + moonButton + asteroidBeltButton + kuiperBeltButton;
+  legend.innerHTML = overviewButton + planetButtons + moonButton + sunButton + asteroidBeltButton + kuiperBeltButton;
   legend.addEventListener('click', (event) => {
     const overview = event.target.closest('button[data-view="overview"]');
     if (overview) {
@@ -825,6 +826,12 @@ function renderLegend() {
       stopTour(false);
       const belt = beltButton.dataset.belt === 'asteroidBelt' ? asteroidBelt : kuiperBelt;
       if (belt) selectBelt(belt);
+      return;
+    }
+    const sunButton = event.target.closest('button[data-sun]');
+    if (sunButton) {
+      stopTour(false);
+      selectSun();
       return;
     }
     const button = event.target.closest('button[data-planet]');
@@ -840,7 +847,8 @@ function updateLegendSelection(selectedName = null) {
     const isOverview = button.dataset.view === 'overview' && selectedName === null;
     const isPlanet = button.dataset.planet === selectedName;
     const isBelt = button.dataset.belt === selectedName;
-    button.classList.toggle('selected', isOverview || isPlanet || isBelt);
+    const isSun = selectedName === 'sun' && button.dataset.sun !== undefined;
+    button.classList.toggle('selected', isOverview || isPlanet || isBelt || isSun);
   });
 }
 
@@ -856,11 +864,22 @@ function selectBelt(belt) {
   stopTour(false);
   selectedPlanet = null;
   setInfo(belt.userData);
-  const worldPosition = new Vector3();
-  belt.getWorldPosition(worldPosition);
-  const offset = new Vector3(0, 14, 38);
-  startViewTransition(worldPosition.clone().add(offset), worldPosition, 900);
+  const isKuiper = belt.userData.type === 'kuiperBelt';
+  // Asteroid belt: ~31-43 AU (x/z span 31-43, y ±0.9) → (0,25,62) frames the ring
+  // Kuiper belt:   ~82-108 AU (x/z span 82-108, y ±2.25) → (0,30,135) frames outer belt
+  const offset = isKuiper ? new Vector3(0, 30, 135) : new Vector3(0, 25, 62);
+  const target = new Vector3(0, 0, 0);
+  startViewTransition(offset.clone(), target, 900);
   updateLegendSelection(belt.userData.type);
+}
+
+function selectSun() {
+  stopTour(false);
+  selectedPlanet = null;
+  const sunTarget = new Vector3(0, 0, 0);
+  const sunPosition = new Vector3(10, 6, 12);
+  startViewTransition(sunPosition, sunTarget, 900);
+  updateLegendSelection('sun');
 }
 
 function selectPlanet(planet) {

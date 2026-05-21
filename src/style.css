@@ -291,6 +291,11 @@ small { color: #b8c7e2; }
   background: radial-gradient(circle, #fff4b4 0 38%, #65a7ff 42% 100%);
 }
 
+.legend .sun-dot {
+  background: radial-gradient(circle at 35% 35%, #fffde0 0%, #ffe566 35%, #ff9900 70%, #ff4400 100%);
+  box-shadow: 0 0 10px #ffaa00, 0 0 20px #ff660066;
+}
+
 @media (max-width: 680px) {
   .hud {
     width: calc(100vw - 1.5rem);
