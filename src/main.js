@@ -552,54 +552,28 @@ function createSun() {
   scene.add(halo);
   sunMeshes.push(halo);
 
-  // Solar prominence / streamer spikes — 8 curved spike meshes
-  const spikeAngles = [0, 45, 90, 135, 180, 225, 270, 315];
-  spikeAngles.forEach((deg) => {
-    const rad = (deg * Math.PI) / 180;
-    const spikeGeo = new SphereGeometry(1, 16, 16);
-    // Stretch into elongated shape
-    spikeGeo.scale(0.45, 1.6, 0.45);
-    const spike = new Mesh(
-      spikeGeo,
+  // Solar corona rays — soft extended glow at 2 more distance bands
+  // (removed: SphereGeometry-based spike/ray meshes caused flat-ellipse and bar/streak
+  //  artifacts when scaled non-uniformly; replaced with pure radial glow spheres)
+  const coronaBands = [
+    { radius: 20, color: 0xfff0a0, opacity: 0.035 },
+    { radius: 26, color: 0xffd060, opacity: 0.022 },
+  ];
+  coronaBands.forEach(({ radius, color, opacity }) => {
+    const mesh = new Mesh(
+      new SphereGeometry(radius, 32, 32),
       new MeshBasicMaterial({
-        color: 0xff9030,
+        color,
         transparent: true,
-        opacity: 0.22,
+        opacity,
         blending: AdditiveBlending,
-        depthWrite: false
+        depthWrite: false,
+        side: DoubleSide,
       })
     );
-    spike.position.set(
-      Math.cos(rad) * 7.8,
-      (Math.random() - 0.5) * 1.5,
-      Math.sin(rad) * 7.8
-    );
-    spike.lookAt(0, spike.position.y, 0);
-    scene.add(spike);
-    sunMeshes.push(spike);
+    scene.add(mesh);
+    sunMeshes.push(mesh);
   });
-
-  // Solar corona rays — thin bright streaks at random angles
-  for (let i = 0; i < 14; i++) {
-    const rayGeo = new SphereGeometry(1, 8, 8);
-    rayGeo.scale(0.18, 2.8, 0.18);
-    const ray = new Mesh(
-      rayGeo,
-      new MeshBasicMaterial({
-        color: 0xffe080,
-        transparent: true,
-        opacity: 0.14,
-        blending: AdditiveBlending,
-        depthWrite: false
-      })
-    );
-    const angle = Math.random() * Math.PI * 2;
-    const elevation = (Math.random() - 0.5) * 2.2;
-    ray.position.set(Math.cos(angle) * 9.2, elevation, Math.sin(angle) * 9.2);
-    ray.rotation.z = elevation * 0.15;
-    scene.add(ray);
-    sunMeshes.push(ray);
-  }
 
   return sun;
 }
