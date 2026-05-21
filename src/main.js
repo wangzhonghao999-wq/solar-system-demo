@@ -876,6 +876,7 @@ function selectBelt(belt) {
 function selectSun() {
   stopTour(false);
   selectedPlanet = null;
+  setInfo({ type: 'sun', name: '太阳' });
   const sunTarget = new Vector3(0, 0, 0);
   const sunPosition = new Vector3(10, 6, 12);
   startViewTransition(sunPosition, sunTarget, 900);
