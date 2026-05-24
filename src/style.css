@@ -426,3 +426,13 @@ small { color: #b8c7e2; }
 .hud-restore {
   display: none;
 }
+
+@media (max-width: 680px) {
+  .hud-close {
+    display: inline-flex;
+  }
+
+  .hud-restore {
+    display: none;
+  }
+}
