@@ -1030,6 +1030,29 @@ document.querySelector('#preset-overview')?.addEventListener('click', () => {
   selectOverview();
 });
 
+// Mobile HUD collapse/restore
+(function initHudCollapse() {
+  const hud = document.querySelector('.hud');
+  const closeBtn = document.querySelector('.hud-close');
+  const restoreBtn = document.querySelector('.hud-restore');
+  if (!hud || !closeBtn || !restoreBtn) return;
+
+  let hudDismissed = false;
+
+  closeBtn.addEventListener('click', () => {
+    hudDismissed = true;
+    hud.style.display = 'none';
+    restoreBtn.style.display = 'inline-flex';
+  });
+
+  restoreBtn.addEventListener('click', () => {
+    hudDismissed = false;
+    hud.style.display = '';
+    restoreBtn.style.display = 'none';
+    hud.scrollTop = 0;
+  });
+})();
+
 const clock = new Clock();
 
 function animate() {

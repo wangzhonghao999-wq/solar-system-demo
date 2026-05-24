@@ -10,6 +10,7 @@
       <canvas id="space"></canvas>
       <div class="label-layer" aria-hidden="true"></div>
       <section class="hud" aria-live="polite">
+        <button type="button" class="hud-close" aria-label="关闭信息面板">✕</button>
         <p class="eyebrow">互动 3D 模型</p>
         <h1>太阳系</h1>
         <p>拖拽旋转视角，滚轮或双指缩放；点击行星或月球可查看简介，点击太阳或空白处回到总览。</p>
@@ -28,6 +29,7 @@
         </div>
       </section>
       <div class="legend" aria-label="行星与视角选择"></div>
+      <button type="button" class="hud-restore" aria-label="显示信息面板">☰ 显示信息</button>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>
